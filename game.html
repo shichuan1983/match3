@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>三消小游戏</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
       background: #fff0f5;
       font-family: sans-serif;
+    }
+    .game-wrapper {
+      max-width: 420px;
+      margin: 0 auto;
+      padding-top: 1vh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -19,39 +27,39 @@
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(6, 50px);
-      gap: 6px;
+      grid-template-columns: repeat(6, 48px);
+      gap: 5px;
     }
     .tile {
-      width: 50px;
-      height: 50px;
-      font-size: 26px;
-      text-align: center;
-      line-height: 50px;
+      width: 48px;
+      height: 48px;
+      font-size: 24px;
+      line-height: 48px;
       background: white;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      border-radius: 6px;
+      text-align: center;
     }
     #adOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.8);
       display: none;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      flex-direction: column;
       color: white;
       z-index: 999;
     }
     #adOverlay img {
-      width: 200px;
-      height: auto;
-      margin-bottom: 10px;
+      width: 60%;
+      max-width: 300px;
+      margin-bottom: 15px;
     }
     #closeAdBtn {
+      font-size: 16px;
       background: #ffcc00;
       border: none;
-      font-size: 18px;
       padding: 10px 20px;
       border-radius: 8px;
       display: none;
@@ -60,11 +68,13 @@
 </head>
 <body>
   <audio id="bgm" src="assets/bgm.mp3" loop preload="auto"></audio>
-  <div id="score">分数：0</div>
-  <div id="board"></div>
+  <div class="game-wrapper">
+    <div id="score">分数：0</div>
+    <div id="board"></div>
+  </div>
 
   <div id="adOverlay">
-    <img src="assets/coke.png" alt="广告图"/>
+    <img src="assets/coke.png" alt="广告图">
     <div>可口可乐 · 清爽每一刻</div>
     <div id="adCountdown">广告剩余 5 秒</div>
     <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
@@ -76,7 +86,6 @@ const tileTypes = ["🍓","🍇","🍊","🍌","🍒"];
 let board = [], selected = null, score = 0, adWatched = true;
 const shownAdScores = new Set();
 const bgm = document.getElementById("bgm");
-
 document.body.addEventListener("click", () => bgm.play().catch(()=>{}), { once: true });
 
 function getRandomTile() {
