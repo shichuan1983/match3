@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <title>三消游戏大图标 + 背景音乐</title>
+  <meta charset="UTF-8">
+  <title>三消游戏最终修复版</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <style>
     body {
@@ -33,27 +33,57 @@
       color: #333;
     }
     #score {
-      font-size: 7vw;
+      font-size: 6vw;
       margin-top: 10px;
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(6, 18vw);
-      gap: 2vw;
+      grid-template-columns: repeat(6, 15vw);
+      gap: 1vw;
       justify-content: center;
       margin-top: 3vh;
     }
     .tile {
-      width: 18vw;
-      height: 18vw;
+      width: 15vw;
+      height: 15vw;
       font-size: 9vw;
+      line-height: 15vw;
       border-radius: 10px;
       border: 1px solid #ccc;
       background: white;
+      text-align: center;
       cursor: pointer;
+      overflow: hidden;
     }
     .selected {
       background: #ffe066 !important;
+    }
+    #adOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000000ee;
+      color: white;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 5vw;
+      z-index: 999;
+    }
+    #adOverlay img {
+      width: 60vw;
+      margin-bottom: 2vh;
+      border-radius: 1rem;
+    }
+    #closeAdBtn {
+      margin-top: 2vh;
+      padding: 1vh 3vw;
+      background: #ffcc00;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      font-size: 4vw;
+      display: none;
     }
   </style>
 </head>
@@ -68,16 +98,25 @@
   <div id="score">分数：0</div>
   <div id="board"></div>
 
+  <div id="adOverlay">
+    <img src="https://img.alicdn.com/imgextra/i4/196993935/O1CN01gnYE6b1CofhG6kS6J_!!196993935.png" alt="可口可乐广告">
+    <div>可口可乐 · 清爽每一刻！</div>
+    <div id="adCountdown">广告剩余 5 秒</div>
+    <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
+  </div>
+
   <script>
     const boardSize = 6;
     const tileTypes = ["🍓", "🍇", "🍊", "🍌", "🍒"];
     let board = [], selected = null, score = 0;
-    const scoreDiv = document.getElementById("score");
+    let adWatched = true;
+    const shownAdScores = new Set();
     const boardDiv = document.getElementById("board");
+    const scoreDiv = document.getElementById("score");
     const bgm = document.getElementById("bgm");
 
     function startGame() {
-      bgm.play().catch(() => {});
+      bgm.play().then(() => console.log("🎵 背景音乐播放成功")).catch(e => console.log("❌ 音乐播放失败", e));
       document.getElementById("startOverlay").style.display = "none";
     }
 
@@ -114,6 +153,7 @@
     }
 
     function handleClick(row, col) {
+      if (!adWatched) return;
       if (!selected) {
         selected = { row, col };
         drawBoard();
@@ -126,12 +166,17 @@
         board[row][col] = board[selected.row][selected.col];
         board[selected.row][selected.col] = temp;
 
-        if (!checkAndRemoveMatches()) {
+        if (checkAndRemoveMatches()) {
+          score += 10;
+          if (score >= 20 && !shownAdScores.has(score)) {
+            shownAdScores.add(score);
+            adWatched = false;
+            showAd();
+          }
+        } else {
           const temp2 = board[row][col];
           board[row][col] = board[selected.row][selected.col];
           board[selected.row][selected.col] = temp2;
-        } else {
-          score += 10;
         }
       }
       selected = null;
@@ -176,10 +221,34 @@
       }
     }
 
+    function showAd() {
+      const ad = document.getElementById("adOverlay");
+      const closeBtn = document.getElementById("closeAdBtn");
+      const countdown = document.getElementById("adCountdown");
+      ad.style.display = "flex";
+      closeBtn.style.display = "none";
+      let sec = 5;
+      countdown.innerText = "广告剩余 " + sec + " 秒";
+      const timer = setInterval(() => {
+        sec--;
+        countdown.innerText = "广告剩余 " + sec + " 秒";
+        if (sec === 0) {
+          clearInterval(timer);
+          closeBtn.style.display = "inline-block";
+        }
+      }, 1000);
+    }
+
+    function closeAd() {
+      document.getElementById("adOverlay").style.display = "none";
+      adWatched = true;
+      window.open("https://s.click.taobao.com/t?e=taobao_detail&pid=mm_12345678_87654321_123456789", "_blank");
+    }
+
     createBoard();
     drawBoard();
     setInterval(() => {
-      if (checkAndRemoveMatches()) {
+      if (adWatched && checkAndRemoveMatches()) {
         score += 5;
         drawBoard();
       }
