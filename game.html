@@ -68,8 +68,7 @@
       z-index: 999;
     }
     #adOverlay img {
-      width: 60vw;
-      max-width: 300px;
+      width: 50vw;
       margin-bottom: 2vh;
       border-radius: 1rem;
     }
@@ -86,18 +85,18 @@
   </style>
 </head>
 <body>
-  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_6d5bb17f92.mp3?filename=fun-loop-109096.mp3" loop preload="auto"></audio>
+  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_6d5bb17f92.mp3" loop preload="auto"></audio>
 
   <div id="startOverlay">
     <h1>🍓 点击开始游戏</h1>
-    <button onclick="startGame()">🎵 开始游戏并播放音乐</button>
+    <button onclick="startGame()">🎵 播放音乐并开始</button>
   </div>
 
   <div id="score">分数：0</div>
   <div id="board"></div>
 
   <div id="adOverlay">
-    <img id="cokeImg" src="https://img.alicdn.com/imgextra/i1/6000000007981/O1CN01YvHZKJ1UCqkzb5jWX_!!6000000007981-0-tbvideo.jpg" alt="可口可乐广告图" />
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABuUlEQVR4nO3aO07DMBAF0Rm0v/8vzrHVkqBtYXYi4Yp6zFLF6zDj14AIAAAAAAAAAAADgPXI+1v4rpnyueZxnebyWj+i0r5r5PDqHKLP3oBrc5On/f19mB+Z7mxeqwvHqeR6zSHe7vJvOE+R6eIPnJefLG4e9J8x8Y8y+Z8r5/f/HxekXHzN9w4y+ZnR+Uh+MHvVebtK1aTbNU9ZfGHZsy7FdWY3WcWkn+mH8uo9WvZqxT1lxrFV1ndZhbTfWdZC7rfmIsvHP6XB3e5+eDve/nrzuHuPx9AjzT7SL/sVYx7vZrfHgBAAAAAAAAAAAAAAA+HuAORzC8MKV+e4AAAAASUVORK5CYII=" alt="可口可乐广告图" />
     <div>可口可乐 · 清爽每一刻！</div>
     <div id="adCountdown">广告剩余 5 秒</div>
     <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
@@ -109,13 +108,15 @@
     let board = [], selected = null, score = 0;
     let adWatched = true;
     const shownAdScores = new Set();
-
     const bgm = document.getElementById("bgm");
 
     function startGame() {
-      bgm.play().then(() => console.log("🎵 背景音乐播放成功")).catch(e => console.log("❌ 音乐播放失败", e));
+      bgm.play().then(() => console.log("🎵 播放成功")).catch(e => console.log("❌ 播放失败", e));
       document.getElementById("startOverlay").style.display = "none";
     }
+
+    document.body.addEventListener("touchstart", () => bgm.play().catch(() => {}), { once: true });
+    document.body.addEventListener("click", () => bgm.play().catch(() => {}), { once: true });
 
     function getRandomTile() {
       return tileTypes[Math.floor(Math.random() * tileTypes.length)];
