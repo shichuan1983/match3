@@ -1,256 +1,199 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>三消游戏</title>
+  <meta charset="UTF-8" />
+  <title>三消小游戏</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       margin: 0;
       background: #fff0f5;
       font-family: sans-serif;
-      text-align: center;
-    }
-    #startOverlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      color: white;
-      z-index: 1000;
-    }
-    #startOverlay button {
-      font-size: 5vw;
-      padding: 1vw 4vw;
-      margin-top: 4vh;
-      border-radius: 10px;
-      background: #ffcc00;
-      border: none;
     }
     #score {
-      font-size: 6vw;
+      font-size: 24px;
       margin: 10px;
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(6, 15vw);
-      gap: 1vw;
-      justify-content: center;
+      grid-template-columns: repeat(6, 50px);
+      gap: 6px;
     }
     .tile {
-      width: 15vw;
-      height: 15vw;
-      font-size: 9vw;
-      line-height: 15vw;
+      width: 50px;
+      height: 50px;
+      font-size: 26px;
       text-align: center;
-      border-radius: 10px;
-      border: 1px solid #ccc;
+      line-height: 50px;
       background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
     }
     #adOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.9);
       display: none;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
       color: white;
       z-index: 999;
     }
     #adOverlay img {
-      display: block;
-      width: 60vw;
-      max-width: 300px;
-      margin-bottom: 2vh;
-      background: white;
-      border-radius: 12px;
+      width: 200px;
+      height: auto;
+      margin-bottom: 10px;
     }
     #closeAdBtn {
-      margin-top: 2vh;
-      font-size: 4vw;
-      padding: 1vh 3vw;
       background: #ffcc00;
       border: none;
+      font-size: 18px;
+      padding: 10px 20px;
       border-radius: 8px;
       display: none;
-    }
-    #musicStatus {
-      font-size: 4vw;
-      margin-top: 1vh;
-      color: green;
     }
   </style>
 </head>
 <body>
-  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_6d5bb17f92.mp3" loop preload="auto"></audio>
-
-  <div id="startOverlay">
-    <h1>🍭 三消小游戏</h1>
-    <button onclick="startGame()">🎵 启动音乐并开始</button>
-    <div id="musicStatus">未尝试播放</div>
-  </div>
-
+  <audio id="bgm" src="assets/bgm.mp3" loop preload="auto"></audio>
   <div id="score">分数：0</div>
   <div id="board"></div>
 
   <div id="adOverlay">
-    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABuUlEQVR4nO3aO07DMBAF0Rm0v/8vzrHVkqBtYXYi4Yp6zFLF6zDj14AIAAAAAAAAAAADgPXI+1v4rpnyueZxnebyWj+i0r5r5PDqHKLP3oBrc5On/f19mB+Z7mxeqwvHqeR6zSHe7vJvOE+R6eIPnJefLG4e9J8x8Y8y+Z8r5/f/HxekXHzN9w4y+ZnR+Uh+MHvVebtK1aTbNU9ZfGHZsy7FdWY3WcWkn+mH8uo9WvZqxT1lxrFV1ndZhbTfWdZC7rfmIsvHP6XB3e5+eDve/nrzuHuPx9AjzT7SL/sVYx7vZrfHgBAAAAAAAAAAAAAAA+HuAORzC8MKV+e4AAAAASUVORK5CYII=" alt="可乐广告"/>
+    <img src="assets/coke.png" alt="广告图"/>
     <div>可口可乐 · 清爽每一刻</div>
     <div id="adCountdown">广告剩余 5 秒</div>
     <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
   </div>
 
 <script>
-  const boardSize = 6;
-  const tileTypes = ["🍓", "🍇", "🍊", "🍌", "🍒"];
-  let board = [], selected = null, score = 0;
-  let adWatched = true;
-  const shownAdScores = new Set();
-  const bgm = document.getElementById("bgm");
+const boardSize = 6;
+const tileTypes = ["🍓","🍇","🍊","🍌","🍒"];
+let board = [], selected = null, score = 0, adWatched = true;
+const shownAdScores = new Set();
+const bgm = document.getElementById("bgm");
 
-  function startGame() {
-    bgm.play().then(() => {
-      document.getElementById("musicStatus").innerText = "🎵 音乐播放成功";
-    }).catch(err => {
-      document.getElementById("musicStatus").innerText = "❌ 音乐被拦截，请手动点击屏幕播放";
-      console.log("音乐播放失败", err);
-    });
-    document.getElementById("startOverlay").style.display = "none";
-  }
+document.body.addEventListener("click", () => bgm.play().catch(()=>{}), { once: true });
 
-  function getRandomTile() {
-    return tileTypes[Math.floor(Math.random() * tileTypes.length)];
-  }
-
-  function createBoard() {
-    board = Array.from({ length: boardSize }, () => Array.from({ length: boardSize }, getRandomTile));
-  }
-
-  function drawBoard() {
-    const boardDiv = document.getElementById("board");
-    boardDiv.innerHTML = "";
-    board.forEach((row, r) => {
-      row.forEach((tile, c) => {
-        const el = document.createElement("div");
-        el.className = "tile";
-        el.innerText = tile;
-        el.onclick = () => handleClick(r, c);
-        if (selected && selected.row === r && selected.col === c) {
-          el.style.background = "#ffe066";
-        }
-        boardDiv.appendChild(el);
-      });
-    });
-    document.getElementById("score").innerText = "分数：" + score;
-  }
-
-  function handleClick(r, c) {
-    if (!adWatched) return;
-    if (!selected) {
-      selected = { row: r, col: c };
-      drawBoard();
-      return;
+function getRandomTile() {
+  return tileTypes[Math.floor(Math.random() * tileTypes.length)];
+}
+function createBoard() {
+  board = Array.from({ length: boardSize }, () =>
+    Array.from({ length: boardSize }, getRandomTile)
+  );
+}
+function drawBoard() {
+  const boardDiv = document.getElementById("board");
+  boardDiv.innerHTML = "";
+  for (let r = 0; r < boardSize; r++) {
+    for (let c = 0; c < boardSize; c++) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.innerText = board[r][c];
+      tile.onclick = () => handleClick(r, c);
+      boardDiv.appendChild(tile);
     }
-    const dx = Math.abs(selected.row - r);
-    const dy = Math.abs(selected.col - c);
-    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-      const temp = board[r][c];
-      board[r][c] = board[selected.row][selected.col];
-      board[selected.row][selected.col] = temp;
-
-      if (checkMatches()) {
-        score += 10;
-        if (score >= 20 && !shownAdScores.has(score)) {
-          shownAdScores.add(score);
-          adWatched = false;
-          showAd();
-        }
-      } else {
-        const temp2 = board[r][c];
-        board[r][c] = board[selected.row][selected.col];
-        board[selected.row][selected.col] = temp2;
+  }
+  document.getElementById("score").innerText = "分数：" + score;
+}
+function handleClick(r, c) {
+  if (!adWatched) return;
+  if (!selected) {
+    selected = { r, c };
+    return;
+  }
+  const dx = Math.abs(selected.r - r);
+  const dy = Math.abs(selected.c - c);
+  if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+    const temp = board[r][c];
+    board[r][c] = board[selected.r][selected.c];
+    board[selected.r][selected.c] = temp;
+    if (checkMatches()) {
+      score += 10;
+      if (score >= 20 && !shownAdScores.has(score)) {
+        shownAdScores.add(score);
+        showAd();
+        adWatched = false;
+      }
+    } else {
+      const temp2 = board[r][c];
+      board[r][c] = board[selected.r][selected.c];
+      board[selected.r][selected.c] = temp2;
+    }
+  }
+  selected = null;
+  drawBoard();
+}
+function checkMatches() {
+  let matched = false;
+  for (let r = 0; r < boardSize; r++) {
+    for (let c = 0; c < boardSize - 2; c++) {
+      const t = board[r][c];
+      if (t && t === board[r][c+1] && t === board[r][c+2]) {
+        board[r][c] = board[r][c+1] = board[r][c+2] = null;
+        matched = true;
       }
     }
-    selected = null;
+  }
+  for (let c = 0; c < boardSize; c++) {
+    for (let r = 0; r < boardSize - 2; r++) {
+      const t = board[r][c];
+      if (t && t === board[r+1][c] && t === board[r+2][c]) {
+        board[r][c] = board[r+1][c] = board[r+2][c] = null;
+        matched = true;
+      }
+    }
+  }
+  dropTiles();
+  return matched;
+}
+function dropTiles() {
+  for (let c = 0; c < boardSize; c++) {
+    let pointer = boardSize - 1;
+    for (let r = boardSize - 1; r >= 0; r--) {
+      if (board[r][c]) {
+        board[pointer][c] = board[r][c];
+        if (pointer !== r) board[r][c] = null;
+        pointer--;
+      }
+    }
+    for (let r = pointer; r >= 0; r--) {
+      board[r][c] = getRandomTile();
+    }
+  }
+}
+function showAd() {
+  const ad = document.getElementById("adOverlay");
+  ad.style.display = "flex";
+  document.getElementById("closeAdBtn").style.display = "none";
+  let sec = 5;
+  document.getElementById("adCountdown").innerText = "广告剩余 " + sec + " 秒";
+  const timer = setInterval(() => {
+    sec--;
+    document.getElementById("adCountdown").innerText = "广告剩余 " + sec + " 秒";
+    if (sec === 0) {
+      clearInterval(timer);
+      document.getElementById("closeAdBtn").style.display = "block";
+    }
+  }, 1000);
+}
+function closeAd() {
+  document.getElementById("adOverlay").style.display = "none";
+  adWatched = true;
+  window.open("https://s.click.taobao.com/t?e=taobao_detail&pid=mm_12345678_87654321_123456789", "_blank");
+}
+createBoard(); drawBoard();
+setInterval(() => {
+  if (adWatched && checkMatches()) {
+    score += 5;
     drawBoard();
   }
-
-  function checkMatches() {
-    const matches = [];
-    for (let r = 0; r < boardSize; r++) {
-      for (let c = 0; c < boardSize - 2; c++) {
-        const t = board[r][c];
-        if (t && t === board[r][c+1] && t === board[r][c+2]) {
-          matches.push([r,c],[r,c+1],[r,c+2]);
-        }
-      }
-    }
-    for (let c = 0; c < boardSize; c++) {
-      for (let r = 0; r < boardSize - 2; r++) {
-        const t = board[r][c];
-        if (t && t === board[r+1][c] && t === board[r+2][c]) {
-          matches.push([r,c],[r+1,c],[r+2,c]);
-        }
-      }
-    }
-    if (!matches.length) return false;
-    matches.forEach(([r,c]) => board[r][c] = null);
-    dropTiles();
-    return true;
-  }
-
-  function dropTiles() {
-    for (let c = 0; c < boardSize; c++) {
-      let pointer = boardSize - 1;
-      for (let r = boardSize - 1; r >= 0; r--) {
-        if (board[r][c] !== null) {
-          board[pointer][c] = board[r][c];
-          if (pointer !== r) board[r][c] = null;
-          pointer--;
-        }
-      }
-      for (let r = pointer; r >= 0; r--) {
-        board[r][c] = getRandomTile();
-      }
-    }
-  }
-
-  function showAd() {
-    const ad = document.getElementById("adOverlay");
-    const closeBtn = document.getElementById("closeAdBtn");
-    const countdown = document.getElementById("adCountdown");
-    ad.style.display = "flex";
-    closeBtn.style.display = "none";
-    let sec = 5;
-    countdown.innerText = "广告剩余 " + sec + " 秒";
-    const timer = setInterval(() => {
-      sec--;
-      countdown.innerText = "广告剩余 " + sec + " 秒";
-      if (sec === 0) {
-        clearInterval(timer);
-        closeBtn.style.display = "inline-block";
-      }
-    }, 1000);
-  }
-
-  function closeAd() {
-    document.getElementById("adOverlay").style.display = "none";
-    adWatched = true;
-    window.open("https://s.click.taobao.com/t?e=taobao_detail&pid=mm_12345678_87654321_123456789", "_blank");
-  }
-
-  createBoard();
-  drawBoard();
-  setInterval(() => {
-    if (adWatched && checkMatches()) {
-      score += 5;
-      drawBoard();
-    }
-  }, 500);
+}, 500);
 </script>
 </body>
 </html>
