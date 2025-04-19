@@ -2,26 +2,66 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>🍓 可爱三消小游戏</title>
+  <title>三消小游戏</title>
   <style>
-    body { font-family: sans-serif; background: #fff0f5; text-align: center; }
-    #board { display: grid; grid-template-columns: repeat(6, 50px); gap: 5px; justify-content: center; margin-top: 20px; }
-    .tile { width: 50px; height: 50px; font-size: 24px; border-radius: 8px; border: 1px solid #ccc; background: white; cursor: pointer; }
-    .selected { background: #ffe066 !important; }
+    body {
+      font-family: sans-serif;
+      background: #fff0f5;
+      text-align: center;
+      padding: env(safe-area-inset);
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(6, 50px);
+      gap: 5px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .tile {
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+    }
+    .selected {
+      background: #ffe066 !important;
+    }
+    #adOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      z-index: 1000;
+    }
+    #adOverlay img {
+      width: 200px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-  <h1>🍓 可爱三消小游戏</h1>
-  <p>点击两个相邻图标交换，形成三个一样的会自动消除</p>
+  <h1>🍓 三消小游戏</h1>
   <div id="score">分数：0</div>
   <div id="board"></div>
+
+  <div id="adOverlay" style="display:none;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Coca-Cola_logo.svg" alt="可口可乐">
+    <div>清爽每一刻 · 可口可乐</div>
+    <div id="adCountdown">5</div>
+  </div>
 
   <script>
     const boardSize = 6;
     const tileTypes = ["🍓", "🍇", "🍊", "🍌", "🍒"];
-    let board = [];
-    let selected = null;
-    let score = 0;
+    let board = [], selected = null, score = 0, adShown = false;
 
     function getRandomTile() {
       return tileTypes[Math.floor(Math.random() * tileTypes.length)];
@@ -30,41 +70,39 @@
     function createBoard() {
       board = [];
       for (let r = 0; r < boardSize; r++) {
-        const row = [];
+        board.push([]);
         for (let c = 0; c < boardSize; c++) {
-          row.push(getRandomTile());
+          board[r].push(getRandomTile());
         }
-        board.push(row);
       }
     }
 
     function drawBoard() {
-      const boardDiv = document.getElementById('board');
-      boardDiv.innerHTML = '';
+      const boardDiv = document.getElementById("board");
+      boardDiv.innerHTML = "";
       for (let r = 0; r < boardSize; r++) {
         for (let c = 0; c < boardSize; c++) {
-          const tile = document.createElement('div');
-          tile.className = 'tile';
+          const tile = document.createElement("div");
+          tile.className = "tile";
           tile.innerText = board[r][c];
-          tile.dataset.row = r;
-          tile.dataset.col = c;
-          if (selected && selected.row == r && selected.col == c) {
-            tile.classList.add('selected');
-          }
           tile.onclick = () => handleClick(r, c);
+          if (selected && selected.row === r && selected.col === c) {
+            tile.classList.add("selected");
+          }
           boardDiv.appendChild(tile);
         }
       }
-      document.getElementById('score').innerText = `分数：${score}`;
+      document.getElementById("score").innerText = "分数：" + score;
     }
 
     function handleClick(row, col) {
+      if (document.getElementById("adOverlay").style.display === "flex") return;
+
       if (!selected) {
         selected = { row, col };
         drawBoard();
         return;
       }
-
       const dx = Math.abs(selected.row - row);
       const dy = Math.abs(selected.col - col);
       if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
@@ -74,68 +112,82 @@
 
         if (checkAndRemoveMatches()) {
           score += 10;
+          if (score >= 50 && !adShown) showAd(); // 满足条件后展示广告
         } else {
           const temp2 = board[row][col];
           board[row][col] = board[selected.row][selected.col];
           board[selected.row][selected.col] = temp2;
         }
       }
-
       selected = null;
       drawBoard();
     }
 
     function checkAndRemoveMatches() {
-      let matched = [];
+      const matches = [];
       for (let r = 0; r < boardSize; r++) {
         for (let c = 0; c < boardSize - 2; c++) {
-          const val = board[r][c];
-          if (val && val === board[r][c+1] && val === board[r][c+2]) {
-            matched.push([r,c],[r,c+1],[r,c+2]);
+          const t = board[r][c];
+          if (t && t === board[r][c+1] && t === board[r][c+2]) {
+            matches.push([r,c],[r,c+1],[r,c+2]);
           }
         }
       }
       for (let c = 0; c < boardSize; c++) {
         for (let r = 0; r < boardSize - 2; r++) {
-          const val = board[r][c];
-          if (val && val === board[r+1][c] && val === board[r+2][c]) {
-            matched.push([r,c],[r+1,c],[r+2,c]);
+          const t = board[r][c];
+          if (t && t === board[r+1][c] && t === board[r+2][c]) {
+            matches.push([r,c],[r+1,c],[r+2,c]);
           }
         }
       }
-      if (matched.length === 0) return false;
-
-      matched.forEach(([r, c]) => board[r][c] = null);
+      if (matches.length === 0) return false;
+      matches.forEach(([r,c]) => board[r][c] = null);
       dropAndFill();
       return true;
     }
 
     function dropAndFill() {
       for (let c = 0; c < boardSize; c++) {
-        let empty = boardSize - 1;
+        let pointer = boardSize - 1;
         for (let r = boardSize - 1; r >= 0; r--) {
-          if (board[r][c] !== null) {
-            board[empty][c] = board[r][c];
-            if (empty !== r) board[r][c] = null;
-            empty--;
+          if (board[r][c]) {
+            board[pointer][c] = board[r][c];
+            if (pointer !== r) board[r][c] = null;
+            pointer--;
           }
         }
-        for (let r = empty; r >= 0; r--) {
+        for (let r = pointer; r >= 0; r--) {
           board[r][c] = getRandomTile();
         }
       }
     }
 
-    function gameLoop() {
-      if (checkAndRemoveMatches()) {
-        score += 5;
-        drawBoard();
-      }
+    function showAd() {
+      adShown = true;
+      const overlay = document.getElementById("adOverlay");
+      const countdown = document.getElementById("adCountdown");
+      overlay.style.display = "flex";
+      let time = 5;
+      countdown.innerText = time;
+      const timer = setInterval(() => {
+        time--;
+        countdown.innerText = time;
+        if (time <= 0) {
+          clearInterval(timer);
+          overlay.style.display = "none";
+        }
+      }, 1000);
     }
 
     createBoard();
     drawBoard();
-    setInterval(gameLoop, 500);
+    setInterval(() => {
+      if (checkAndRemoveMatches()) {
+        score += 5;
+        drawBoard();
+      }
+    }, 500);
   </script>
 </body>
 </html>
