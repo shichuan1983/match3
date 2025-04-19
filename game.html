@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>🍓 可爱三消小游戏</title>
+  <style>
+    body { font-family: sans-serif; background: #fff0f5; text-align: center; }
+    #board { display: grid; grid-template-columns: repeat(6, 50px); gap: 5px; justify-content: center; margin-top: 20px; }
+    .tile { width: 50px; height: 50px; font-size: 24px; border-radius: 8px; border: 1px solid #ccc; background: white; cursor: pointer; }
+    .selected { background: #ffe066 !important; }
+  </style>
+</head>
+<body>
+  <h1>🍓 可爱三消小游戏</h1>
+  <p>点击两个相邻图标交换，形成三个一样的会自动消除</p>
+  <div id="score">分数：0</div>
+  <div id="board"></div>
+
+  <script>
+    const boardSize = 6;
+    const tileTypes = ["🍓", "🍇", "🍊", "🍌", "🍒"];
+    let board = [];
+    let selected = null;
+    let score = 0;
+
+    function getRandomTile() {
+      return tileTypes[Math.floor(Math.random() * tileTypes.length)];
+    }
+
+    function createBoard() {
+      board = [];
+      for (let r = 0; r < boardSize; r++) {
+        const row = [];
+        for (let c = 0; c < boardSize; c++) {
+          row.push(getRandomTile());
+        }
+        board.push(row);
+      }
+    }
+
+    function drawBoard() {
+      const boardDiv = document.getElementById('board');
+      boardDiv.innerHTML = '';
+      for (let r = 0; r < boardSize; r++) {
+        for (let c = 0; c < boardSize; c++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.innerText = board[r][c];
+          tile.dataset.row = r;
+          tile.dataset.col = c;
+          if (selected && selected.row == r && selected.col == c) {
+            tile.classList.add('selected');
+          }
+          tile.onclick = () => handleClick(r, c);
+          boardDiv.appendChild(tile);
+        }
+      }
+      document.getElementById('score').innerText = `分数：${score}`;
+    }
+
+    function handleClick(row, col) {
+      if (!selected) {
+        selected = { row, col };
+        drawBoard();
+        return;
+      }
+
+      const dx = Math.abs(selected.row - row);
+      const dy = Math.abs(selected.col - col);
+      if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+        const temp = board[row][col];
+        board[row][col] = board[selected.row][selected.col];
+        board[selected.row][selected.col] = temp;
+
+        if (checkAndRemoveMatches()) {
+          score += 10;
+        } else {
+          const temp2 = board[row][col];
+          board[row][col] = board[selected.row][selected.col];
+          board[selected.row][selected.col] = temp2;
+        }
+      }
+
+      selected = null;
+      drawBoard();
+    }
+
+    function checkAndRemoveMatches() {
+      let matched = [];
+      for (let r = 0; r < boardSize; r++) {
+        for (let c = 0; c < boardSize - 2; c++) {
+          const val = board[r][c];
+          if (val && val === board[r][c+1] && val === board[r][c+2]) {
+            matched.push([r,c],[r,c+1],[r,c+2]);
+          }
+        }
+      }
+      for (let c = 0; c < boardSize; c++) {
+        for (let r = 0; r < boardSize - 2; r++) {
+          const val = board[r][c];
+          if (val && val === board[r+1][c] && val === board[r+2][c]) {
+            matched.push([r,c],[r+1,c],[r+2,c]);
+          }
+        }
+      }
+      if (matched.length === 0) return false;
+
+      matched.forEach(([r, c]) => board[r][c] = null);
+      dropAndFill();
+      return true;
+    }
+
+    function dropAndFill() {
+      for (let c = 0; c < boardSize; c++) {
+        let empty = boardSize - 1;
+        for (let r = boardSize - 1; r >= 0; r--) {
+          if (board[r][c] !== null) {
+            board[empty][c] = board[r][c];
+            if (empty !== r) board[r][c] = null;
+            empty--;
+          }
+        }
+        for (let r = empty; r >= 0; r--) {
+          board[r][c] = getRandomTile();
+        }
+      }
+    }
+
+    function gameLoop() {
+      if (checkAndRemoveMatches()) {
+        score += 5;
+        drawBoard();
+      }
+    }
+
+    createBoard();
+    drawBoard();
+    setInterval(gameLoop, 500);
+  </script>
+</body>
+</html>
