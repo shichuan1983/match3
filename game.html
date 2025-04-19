@@ -1,27 +1,33 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>三消小游戏</title>
+  <meta charset="UTF-8" />
+  <title>三消游戏（最终版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
     body {
       font-family: sans-serif;
       background: #fff0f5;
-      text-align: center;
+      margin: 0;
       padding: env(safe-area-inset);
+      text-align: center;
+    }
+    #score {
+      font-size: 6vw;
+      margin-top: 10px;
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(6, 50px);
-      gap: 5px;
+      grid-template-columns: repeat(6, 14vw);
+      gap: 1vw;
       justify-content: center;
-      margin-top: 10px;
+      margin-top: 3vh;
     }
     .tile {
-      width: 50px;
-      height: 50px;
-      font-size: 24px;
-      border-radius: 8px;
+      width: 14vw;
+      height: 14vw;
+      font-size: 6vw;
+      border-radius: 10px;
       border: 1px solid #ccc;
       background: white;
       cursor: pointer;
@@ -32,36 +38,54 @@
     #adOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.9);
+      background: linear-gradient(#000, #222);
       color: white;
-      display: flex;
+      display: none;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      font-size: 24px;
-      z-index: 1000;
+      font-size: 5vw;
+      z-index: 999;
     }
     #adOverlay img {
-      width: 200px;
-      margin-bottom: 20px;
+      width: 60vw;
+      margin-bottom: 2vh;
+    }
+    #closeAdBtn {
+      margin-top: 2vh;
+      padding: 1vh 3vw;
+      background: #ffcc00;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      font-size: 4vw;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h1>🍓 三消小游戏</h1>
   <div id="score">分数：0</div>
   <div id="board"></div>
 
-  <div id="adOverlay" style="display:none;">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Coca-Cola_logo.svg" alt="可口可乐">
+  <div id="adOverlay">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Coca-Cola_logo.svg" />
     <div>清爽每一刻 · 可口可乐</div>
-    <div id="adCountdown">5</div>
+    <div id="adCountdown">广告剩余 5 秒</div>
+    <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
   </div>
 
   <script>
     const boardSize = 6;
     const tileTypes = ["🍓", "🍇", "🍊", "🍌", "🍒"];
-    let board = [], selected = null, score = 0, adShown = false;
+    let board = [], selected = null, score = 0;
+    let adWatched = true;
+    const shownAdScores = new Set();
+
+    const boardDiv = document.getElementById("board");
+    const scoreDiv = document.getElementById("score");
+    const adOverlay = document.getElementById("adOverlay");
+    const adCountdown = document.getElementById("adCountdown");
+    const closeAdBtn = document.getElementById("closeAdBtn");
 
     function getRandomTile() {
       return tileTypes[Math.floor(Math.random() * tileTypes.length)];
@@ -70,15 +94,15 @@
     function createBoard() {
       board = [];
       for (let r = 0; r < boardSize; r++) {
-        board.push([]);
+        const row = [];
         for (let c = 0; c < boardSize; c++) {
-          board[r].push(getRandomTile());
+          row.push(getRandomTile());
         }
+        board.push(row);
       }
     }
 
     function drawBoard() {
-      const boardDiv = document.getElementById("board");
       boardDiv.innerHTML = "";
       for (let r = 0; r < boardSize; r++) {
         for (let c = 0; c < boardSize; c++) {
@@ -92,17 +116,18 @@
           boardDiv.appendChild(tile);
         }
       }
-      document.getElementById("score").innerText = "分数：" + score;
+      scoreDiv.innerText = "分数：" + score;
     }
 
     function handleClick(row, col) {
-      if (document.getElementById("adOverlay").style.display === "flex") return;
+      if (adOverlay.style.display === "flex" || !adWatched) return;
 
       if (!selected) {
         selected = { row, col };
         drawBoard();
         return;
       }
+
       const dx = Math.abs(selected.row - row);
       const dy = Math.abs(selected.col - col);
       if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
@@ -112,7 +137,11 @@
 
         if (checkAndRemoveMatches()) {
           score += 10;
-          if (score >= 50 && !adShown) showAd(); // 满足条件后展示广告
+          if (score % 50 === 0 && !shownAdScores.has(score)) {
+            shownAdScores.add(score);
+            adWatched = false;
+            showAd();
+          }
         } else {
           const temp2 = board[row][col];
           board[row][col] = board[selected.row][selected.col];
@@ -127,31 +156,29 @@
       const matches = [];
       for (let r = 0; r < boardSize; r++) {
         for (let c = 0; c < boardSize - 2; c++) {
-          const t = board[r][c];
-          if (t && t === board[r][c+1] && t === board[r][c+2]) {
-            matches.push([r,c],[r,c+1],[r,c+2]);
+          if (board[r][c] && board[r][c] === board[r][c+1] && board[r][c] === board[r][c+2]) {
+            matches.push([r,c], [r,c+1], [r,c+2]);
           }
         }
       }
       for (let c = 0; c < boardSize; c++) {
         for (let r = 0; r < boardSize - 2; r++) {
-          const t = board[r][c];
-          if (t && t === board[r+1][c] && t === board[r+2][c]) {
-            matches.push([r,c],[r+1,c],[r+2,c]);
+          if (board[r][c] && board[r][c] === board[r+1][c] && board[r][c] === board[r+2][c]) {
+            matches.push([r,c], [r+1,c], [r+2,c]);
           }
         }
       }
       if (matches.length === 0) return false;
       matches.forEach(([r,c]) => board[r][c] = null);
-      dropAndFill();
+      dropTiles();
       return true;
     }
 
-    function dropAndFill() {
+    function dropTiles() {
       for (let c = 0; c < boardSize; c++) {
         let pointer = boardSize - 1;
         for (let r = boardSize - 1; r >= 0; r--) {
-          if (board[r][c]) {
+          if (board[r][c] !== null) {
             board[pointer][c] = board[r][c];
             if (pointer !== r) board[r][c] = null;
             pointer--;
@@ -164,26 +191,30 @@
     }
 
     function showAd() {
-      adShown = true;
-      const overlay = document.getElementById("adOverlay");
-      const countdown = document.getElementById("adCountdown");
-      overlay.style.display = "flex";
-      let time = 5;
-      countdown.innerText = time;
+      adOverlay.style.display = "flex";
+      closeAdBtn.style.display = "none";
+      let seconds = 5;
+      adCountdown.innerText = "广告剩余 " + seconds + " 秒";
       const timer = setInterval(() => {
-        time--;
-        countdown.innerText = time;
-        if (time <= 0) {
+        seconds--;
+        adCountdown.innerText = "广告剩余 " + seconds + " 秒";
+        if (seconds === 0) {
           clearInterval(timer);
-          overlay.style.display = "none";
+          closeAdBtn.style.display = "inline-block";
         }
       }, 1000);
+    }
+
+    function closeAd() {
+      adOverlay.style.display = "none";
+      adWatched = true;
+      window.open("https://s.click.taobao.com/t?e=taobao_detail&pid=mm_12345678_87654321_123456789", "_blank");
     }
 
     createBoard();
     drawBoard();
     setInterval(() => {
-      if (checkAndRemoveMatches()) {
+      if (adWatched && checkAndRemoveMatches()) {
         score += 5;
         drawBoard();
       }
