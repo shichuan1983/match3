@@ -1,32 +1,52 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>三消游戏最终版</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8" />
+  <title>三消游戏大图标 + 背景音乐</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <style>
     body {
-      font-family: sans-serif;
-      background: #fff0f5;
       margin: 0;
-      padding: env(safe-area-inset);
+      background: #fff0f5;
+      font-family: sans-serif;
       text-align: center;
+      padding: env(safe-area-inset);
+    }
+    #startOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    #startOverlay button {
+      font-size: 6vw;
+      padding: 2vw 5vw;
+      margin-top: 4vh;
+      border: none;
+      border-radius: 12px;
+      background: #ffcc00;
+      color: #333;
     }
     #score {
-      font-size: 6vw;
+      font-size: 7vw;
       margin-top: 10px;
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(6, 14vw);
-      gap: 1vw;
+      grid-template-columns: repeat(6, 18vw);
+      gap: 2vw;
       justify-content: center;
       margin-top: 3vh;
     }
     .tile {
-      width: 14vw;
-      height: 14vw;
-      font-size: 6vw;
+      width: 18vw;
+      height: 18vw;
+      font-size: 9vw;
       border-radius: 10px;
       border: 1px solid #ccc;
       background: white;
@@ -35,65 +55,31 @@
     .selected {
       background: #ffe066 !important;
     }
-    #adOverlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #000000ee;
-      color: white;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      font-size: 5vw;
-      z-index: 999;
-    }
-    #adOverlay img {
-      width: 60vw;
-      margin-bottom: 2vh;
-      border-radius: 1rem;
-    }
-    #closeAdBtn {
-      margin-top: 2vh;
-      padding: 1vh 3vw;
-      background: #ffcc00;
-      color: black;
-      border: none;
-      border-radius: 8px;
-      font-size: 4vw;
-      display: none;
-    }
   </style>
 </head>
 <body>
-  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_6d5bb17f92.mp3?filename=fun-loop-109096.mp3" loop></audio>
+  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_6d5bb17f92.mp3?filename=fun-loop-109096.mp3" loop preload="auto"></audio>
+
+  <div id="startOverlay">
+    <h1>🍓 点击开始游戏</h1>
+    <button onclick="startGame()">🎵 开始游戏并播放音乐</button>
+  </div>
 
   <div id="score">分数：0</div>
   <div id="board"></div>
-
-  <div id="adOverlay">
-    <img src="https://img.alicdn.com/imgextra/i4/196993935/O1CN01gnYE6b1CofhG6kS6J_!!196993935.png" alt="可口可乐广告">
-    <div>可口可乐 · 清爽每一刻！</div>
-    <div id="adCountdown">广告剩余 5 秒</div>
-    <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
-  </div>
 
   <script>
     const boardSize = 6;
     const tileTypes = ["🍓", "🍇", "🍊", "🍌", "🍒"];
     let board = [], selected = null, score = 0;
-    let adWatched = true;
-    const shownAdScores = new Set();
-
-    const boardDiv = document.getElementById("board");
     const scoreDiv = document.getElementById("score");
-    const adOverlay = document.getElementById("adOverlay");
-    const adCountdown = document.getElementById("adCountdown");
-    const closeAdBtn = document.getElementById("closeAdBtn");
+    const boardDiv = document.getElementById("board");
     const bgm = document.getElementById("bgm");
 
-    document.body.addEventListener('click', () => {
-      if (bgm.paused) bgm.play().catch(()=>{});
-    });
+    function startGame() {
+      bgm.play().catch(() => {});
+      document.getElementById("startOverlay").style.display = "none";
+    }
 
     function getRandomTile() {
       return tileTypes[Math.floor(Math.random() * tileTypes.length)];
@@ -128,14 +114,11 @@
     }
 
     function handleClick(row, col) {
-      if (adOverlay.style.display === "flex" || !adWatched) return;
-
       if (!selected) {
         selected = { row, col };
         drawBoard();
         return;
       }
-
       const dx = Math.abs(selected.row - row);
       const dy = Math.abs(selected.col - col);
       if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
@@ -143,17 +126,12 @@
         board[row][col] = board[selected.row][selected.col];
         board[selected.row][selected.col] = temp;
 
-        if (checkAndRemoveMatches()) {
-          score += 10;
-          if (score % 50 === 0 && !shownAdScores.has(score)) {
-            shownAdScores.add(score);
-            adWatched = false;
-            showAd();
-          }
-        } else {
+        if (!checkAndRemoveMatches()) {
           const temp2 = board[row][col];
           board[row][col] = board[selected.row][selected.col];
           board[selected.row][selected.col] = temp2;
+        } else {
+          score += 10;
         }
       }
       selected = null;
@@ -198,31 +176,10 @@
       }
     }
 
-    function showAd() {
-      adOverlay.style.display = "flex";
-      closeAdBtn.style.display = "none";
-      let seconds = 5;
-      adCountdown.innerText = "广告剩余 " + seconds + " 秒";
-      const timer = setInterval(() => {
-        seconds--;
-        adCountdown.innerText = "广告剩余 " + seconds + " 秒";
-        if (seconds === 0) {
-          clearInterval(timer);
-          closeAdBtn.style.display = "inline-block";
-        }
-      }, 1000);
-    }
-
-    function closeAd() {
-      adOverlay.style.display = "none";
-      adWatched = true;
-      window.open("https://s.click.taobao.com/t?e=taobao_detail&pid=mm_12345678_87654321_123456789", "_blank");
-    }
-
     createBoard();
     drawBoard();
     setInterval(() => {
-      if (adWatched && checkAndRemoveMatches()) {
+      if (checkAndRemoveMatches()) {
         score += 5;
         drawBoard();
       }
