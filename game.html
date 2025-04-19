@@ -1,43 +1,49 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>三消小游戏</title>
+  <meta charset="UTF-8" />
+  <title>三消游戏</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       height: 100%;
-      overflow: hidden;
       background: #fff0f5;
       font-family: sans-serif;
     }
-    .game-wrapper {
+    .wrapper {
       max-width: 420px;
       margin: 0 auto;
-      padding-top: 1vh;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
+    #startBtn {
+      font-size: 18px;
+      margin: 10px;
+      padding: 8px 20px;
+      background: #ffcc00;
+      border: none;
+      border-radius: 10px;
+    }
     #score {
-      font-size: 24px;
+      font-size: 22px;
       margin: 10px;
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(6, 48px);
+      grid-template-columns: repeat(6, 50px);
       gap: 5px;
     }
     .tile {
-      width: 48px;
-      height: 48px;
+      width: 50px;
+      height: 50px;
+      line-height: 50px;
       font-size: 24px;
-      line-height: 48px;
       background: white;
-      border-radius: 8px;
       border: 1px solid #ccc;
+      border-radius: 8px;
       text-align: center;
     }
     #adOverlay {
@@ -53,14 +59,14 @@
     }
     #adOverlay img {
       width: 60%;
-      max-width: 300px;
-      margin-bottom: 15px;
+      max-width: 280px;
+      margin-bottom: 10px;
     }
     #closeAdBtn {
       font-size: 16px;
       background: #ffcc00;
       border: none;
-      padding: 10px 20px;
+      padding: 8px 18px;
       border-radius: 8px;
       display: none;
     }
@@ -68,13 +74,15 @@
 </head>
 <body>
   <audio id="bgm" src="assets/bgm.mp3" loop preload="auto"></audio>
-  <div class="game-wrapper">
+
+  <div class="wrapper">
+    <button id="startBtn" onclick="startGame()">🎵 点击开始游戏并播放音乐</button>
     <div id="score">分数：0</div>
     <div id="board"></div>
   </div>
 
   <div id="adOverlay">
-    <img src="assets/coke.png" alt="广告图">
+    <img src="assets/coke.png" alt="可口可乐广告"/>
     <div>可口可乐 · 清爽每一刻</div>
     <div id="adCountdown">广告剩余 5 秒</div>
     <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
@@ -86,7 +94,14 @@ const tileTypes = ["🍓","🍇","🍊","🍌","🍒"];
 let board = [], selected = null, score = 0, adWatched = true;
 const shownAdScores = new Set();
 const bgm = document.getElementById("bgm");
-document.body.addEventListener("click", () => bgm.play().catch(()=>{}), { once: true });
+
+function startGame() {
+  bgm.play().then(() => {
+    document.getElementById("startBtn").style.display = "none";
+  }).catch(() => {
+    alert("⚠️ 请确认是否允许网页播放声音！");
+  });
+}
 
 function getRandomTile() {
   return tileTypes[Math.floor(Math.random() * tileTypes.length)];
@@ -194,9 +209,10 @@ function showAd() {
 function closeAd() {
   document.getElementById("adOverlay").style.display = "none";
   adWatched = true;
-  window.open("https://s.click.taobao.com/t?e=taobao_detail&pid=mm_12345678_87654321_123456789", "_blank");
+  window.open("https://s.click.taobao.com/t?e=taobao_detail", "_blank");
 }
-createBoard(); drawBoard();
+createBoard();
+drawBoard();
 setInterval(() => {
   if (adWatched && checkMatches()) {
     score += 5;
