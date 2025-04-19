@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <title>三消游戏（最终版）</title>
+  <meta charset="UTF-8">
+  <title>三消游戏最终版</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
     body {
@@ -38,7 +38,7 @@
     #adOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(#000, #222);
+      background: #000000ee;
       color: white;
       display: none;
       flex-direction: column;
@@ -50,6 +50,7 @@
     #adOverlay img {
       width: 60vw;
       margin-bottom: 2vh;
+      border-radius: 1rem;
     }
     #closeAdBtn {
       margin-top: 2vh;
@@ -64,12 +65,14 @@
   </style>
 </head>
 <body>
+  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_6d5bb17f92.mp3?filename=fun-loop-109096.mp3" loop></audio>
+
   <div id="score">分数：0</div>
   <div id="board"></div>
 
   <div id="adOverlay">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Coca-Cola_logo.svg" />
-    <div>清爽每一刻 · 可口可乐</div>
+    <img src="https://img.alicdn.com/imgextra/i4/196993935/O1CN01gnYE6b1CofhG6kS6J_!!196993935.png" alt="可口可乐广告">
+    <div>可口可乐 · 清爽每一刻！</div>
     <div id="adCountdown">广告剩余 5 秒</div>
     <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
   </div>
@@ -86,6 +89,11 @@
     const adOverlay = document.getElementById("adOverlay");
     const adCountdown = document.getElementById("adCountdown");
     const closeAdBtn = document.getElementById("closeAdBtn");
+    const bgm = document.getElementById("bgm");
+
+    document.body.addEventListener('click', () => {
+      if (bgm.paused) bgm.play().catch(()=>{});
+    });
 
     function getRandomTile() {
       return tileTypes[Math.floor(Math.random() * tileTypes.length)];
