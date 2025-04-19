@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>三消游戏最终修复版</title>
+  <meta charset="UTF-8" />
+  <title>三消游戏（广告图修复）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <style>
     body {
@@ -11,26 +11,6 @@
       font-family: sans-serif;
       text-align: center;
       padding: env(safe-area-inset);
-    }
-    #startOverlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 1000;
-    }
-    #startOverlay button {
-      font-size: 6vw;
-      padding: 2vw 5vw;
-      margin-top: 4vh;
-      border: none;
-      border-radius: 12px;
-      background: #ffcc00;
-      color: #333;
     }
     #score {
       font-size: 6vw;
@@ -55,9 +35,7 @@
       cursor: pointer;
       overflow: hidden;
     }
-    .selected {
-      background: #ffe066 !important;
-    }
+    .selected { background: #ffe066 !important; }
     #adOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -71,7 +49,7 @@
       z-index: 999;
     }
     #adOverlay img {
-      width: 60vw;
+      width: 50vw;
       margin-bottom: 2vh;
       border-radius: 1rem;
     }
@@ -88,18 +66,11 @@
   </style>
 </head>
 <body>
-  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_6d5bb17f92.mp3?filename=fun-loop-109096.mp3" loop preload="auto"></audio>
-
-  <div id="startOverlay">
-    <h1>🍓 点击开始游戏</h1>
-    <button onclick="startGame()">🎵 开始游戏并播放音乐</button>
-  </div>
-
   <div id="score">分数：0</div>
   <div id="board"></div>
 
   <div id="adOverlay">
-    <img src="https://img.alicdn.com/imgextra/i4/196993935/O1CN01gnYE6b1CofhG6kS6J_!!196993935.png" alt="可口可乐广告">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Coca-Cola_bottle_cap.svg/512px-Coca-Cola_bottle_cap.svg.png" alt="可口可乐广告图" />
     <div>可口可乐 · 清爽每一刻！</div>
     <div id="adCountdown">广告剩余 5 秒</div>
     <button id="closeAdBtn" onclick="closeAd()">关闭广告</button>
@@ -111,14 +82,6 @@
     let board = [], selected = null, score = 0;
     let adWatched = true;
     const shownAdScores = new Set();
-    const boardDiv = document.getElementById("board");
-    const scoreDiv = document.getElementById("score");
-    const bgm = document.getElementById("bgm");
-
-    function startGame() {
-      bgm.play().then(() => console.log("🎵 背景音乐播放成功")).catch(e => console.log("❌ 音乐播放失败", e));
-      document.getElementById("startOverlay").style.display = "none";
-    }
 
     function getRandomTile() {
       return tileTypes[Math.floor(Math.random() * tileTypes.length)];
@@ -127,15 +90,15 @@
     function createBoard() {
       board = [];
       for (let r = 0; r < boardSize; r++) {
-        const row = [];
+        board.push([]);
         for (let c = 0; c < boardSize; c++) {
-          row.push(getRandomTile());
+          board[r].push(getRandomTile());
         }
-        board.push(row);
       }
     }
 
     function drawBoard() {
+      const boardDiv = document.getElementById("board");
       boardDiv.innerHTML = "";
       for (let r = 0; r < boardSize; r++) {
         for (let c = 0; c < boardSize; c++) {
@@ -149,7 +112,7 @@
           boardDiv.appendChild(tile);
         }
       }
-      scoreDiv.innerText = "分数：" + score;
+      document.getElementById("score").innerText = "分数：" + score;
     }
 
     function handleClick(row, col) {
@@ -187,15 +150,17 @@
       const matches = [];
       for (let r = 0; r < boardSize; r++) {
         for (let c = 0; c < boardSize - 2; c++) {
-          if (board[r][c] && board[r][c] === board[r][c+1] && board[r][c] === board[r][c+2]) {
-            matches.push([r,c], [r,c+1], [r,c+2]);
+          const t = board[r][c];
+          if (t && t === board[r][c+1] && t === board[r][c+2]) {
+            matches.push([r,c],[r,c+1],[r,c+2]);
           }
         }
       }
       for (let c = 0; c < boardSize; c++) {
         for (let r = 0; r < boardSize - 2; r++) {
-          if (board[r][c] && board[r][c] === board[r+1][c] && board[r][c] === board[r+2][c]) {
-            matches.push([r,c], [r+1,c], [r+2,c]);
+          const t = board[r][c];
+          if (t && t === board[r+1][c] && t === board[r+2][c]) {
+            matches.push([r,c],[r+1,c],[r+2,c]);
           }
         }
       }
